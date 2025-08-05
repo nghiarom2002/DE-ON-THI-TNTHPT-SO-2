@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra Online</title>
+    <!-- Thư viện Tailwind CSS để tạo giao diện đẹp và responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background color */
+        }
+        .container {
+            max-width: 960px;
+        }
+        .quiz-card {
+            background-color: #2d3748; /* Card background color */
+        }
+        .quiz-card-header {
+            background-color: #4a5568; /* Card header background color */
+        }
+        .submit-button {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .submit-button:hover {
+            transform: scale(1.05);
+        }
+        .option-label {
+            transition: background-color 0.2s;
+        }
+        .option-label:hover {
+            background-color: #4a5568;
+        }
+        .results-area {
+            display: none; /* Initially hide the results area with CSS */
+        }
+        .correct-answer {
+            background-color: #10B981; /* Green color for correct answer */
+            color: white;
+            font-weight: bold;
+        }
+        .incorrect-answer {
+            background-color: #EF4444; /* Red color for incorrect answer */
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="container mx-auto p-6 rounded-xl shadow-2xl quiz-card text-white">
+        <div class="quiz-card-header p-4 rounded-t-xl mb-6">
+            <h1 class="text-3xl font-bold text-center text-yellow-400">Kiểm tra Online</h1>
+            <p class="text-center text-gray-300 mt-2">Thời gian: 10 phút | Số câu hỏi: 10</p>
+        </div>
+
+        <!-- Vùng chứa các câu hỏi có thể cuộn được -->
+        <!-- This container is for scrolling on small screens -->
+        <div class="h-[60vh] overflow-y-auto p-4 rounded-lg bg-gray-800 mb-4">
+            <form id="quiz-form" class="space-y-6">
+                <!-- Questions will be added here by JavaScript -->
+            </form>
+        </div>
+        
+        <div class="mt-8 flex justify-center">
+            <button id="submit-btn" type="submit" form="quiz-form" class="submit-button bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-blue-700">
+                Nộp Bài
+            </button>
+        </div>
+        
+        <!-- Khu vực hiển thị kết quả -->
+        <div id="results-area" class="mt-8 p-6 text-center rounded-lg bg-gray-700 results-area">
+            <h2 class="text-2xl font-bold mb-4 text-green-400">Kết quả của bạn:</h2>
+            <p class="text-4xl font-extrabold" id="score-display"></p>
+        </div>
+    </div>
+
+    <script>
+        // Array containing question data, options, and the correct answer
+        // You can change the content here
+        const questions = [
+            {
+                question: "1. CPU là viết tắt của gì?",
+                options: ["Central Power Unit", "Central Processing Unit", "Computer Personal Unit", "Control Program Unit"],
+                answer: "Central Processing Unit"
+            },
+            {
+                question: "2. Phần mềm nào được sử dụng để tạo và chỉnh sửa văn bản?",
+                options: ["Microsoft Excel", "Adobe Photoshop", "Microsoft Word", "Google Chrome"],
+                answer: "Microsoft Word"
+            },
+            {
+                question: "3. Thẻ nhớ SD được dùng để làm gì?",
+                options: ["Lưu trữ dữ liệu", "Phát nhạc", "Kết nối Internet", "In tài liệu"],
+                answer: "Lưu trữ dữ liệu"
+            },
+            {
+                question: "4. Mạng Internet đầu tiên được phát triển bởi ai?",
+                options: ["NASA", "ARPA", "Microsoft", "Apple"],
+                answer: "ARPA"
+            },
+            {
+                question: "5. Ngôn ngữ lập trình nào phổ biến nhất cho phát triển web?",
+                options: ["Java", "Python", "JavaScript", "C++"],
+                answer: "JavaScript"
+            },
+            {
+                question: "6. Để thoát khỏi một chương trình bị treo, ta nhấn tổ hợp phím nào trên Windows?",
+                options: ["Ctrl + Shift + Esc", "Alt + F4", "Ctrl + Alt + Delete", "Windows + D"],
+                answer: "Ctrl + Shift + Esc"
+            },
+            {
+                question: "7. Đâu không phải là một loại trình duyệt web?",
+                options: ["Mozilla Firefox", "Microsoft Excel", "Google Chrome", "Safari"],
+                answer: "Microsoft Excel"
+            },
+            {
+                question: "8. Kí hiệu của bộ nhớ truy cập ngẫu nhiên là gì?",
+                options: ["ROM", "HDD", "SSD", "RAM"],
+                answer: "RAM"
+            },
+            {
+                question: "9. Chức năng chính của một hệ điều hành là gì?",
+                options: ["Chơi trò chơi", "Quản lý phần cứng và phần mềm", "Soạn thảo văn bản", "Vẽ tranh"],
+                answer: "Quản lý phần cứng và phần mềm"
+            },
+            {
+                question: "10. Nút bấm nào dùng để lưu file trong hầu hết các ứng dụng?",
+                options: ["Ctrl + P", "Ctrl + O", "Ctrl + S", "Ctrl + V"],
+                answer: "Ctrl + S"
+            }
+        ];
+
+        const quizForm = document.getElementById('quiz-form');
+        const resultsArea = document.getElementById('results-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Function to create and display questions
+        function renderQuestions() {
+            questions.forEach((q, index) => {
+                const questionElement = document.createElement('div');
+                questionElement.classList.add('p-4', 'rounded-lg', 'bg-gray-700', 'shadow-md');
+                questionElement.innerHTML = `
+                    <p class="font-bold text-lg mb-4">${q.question}</p>
+                `;
+
+                // Shuffle the order of the options for fairness
+                const shuffledOptions = shuffleArray(q.options);
+                shuffledOptions.forEach(option => {
+                    const optionContainer = document.createElement('div');
+                    optionContainer.classList.add('flex', 'items-center', 'my-2');
+                    
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = `question-${index}`;
+                    input.value = option;
+                    input.id = `q${index}-${option.replace(/\s/g, '-')}`;
+                    input.classList.add('form-radio', 'h-4', 'w-4', 'text-blue-600', 'cursor-pointer', 'mr-2');
+
+                    const label = document.createElement('label');
+                    label.htmlFor = input.id;
+                    label.textContent = option;
+                    label.classList.add('flex-grow', 'p-2', 'rounded-md', 'cursor-pointer', 'option-label');
+
+                    optionContainer.appendChild(input);
+                    optionContainer.appendChild(label);
+                    questionElement.appendChild(optionContainer);
+                });
+                quizForm.appendChild(questionElement);
+            });
+        }
+
+        // Fisher-Yates shuffle algorithm to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Event handler for form submission
+        quizForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            let score = 0;
+
+            questions.forEach((q, index) => {
+                const selectedOption = document.querySelector(`input[name="question-${index}"]:checked`);
+                
+                // Vô hiệu hóa tất cả các nút radio của câu hỏi này
+                const radioButtons = document.querySelectorAll(`input[name="question-${index}"]`);
+                radioButtons.forEach(radio => radio.disabled = true);
+
+                // Highlight correct and incorrect answers
+                const allOptions = document.querySelectorAll(`input[name="question-${index}"] + label`);
+                allOptions.forEach(label => {
+                    if (label.textContent.trim() === q.answer.trim()) {
+                        // Highlight the correct answer in green
+                        label.classList.add('correct-answer');
+                    } else if (selectedOption && selectedOption.value === label.textContent.trim() && selectedOption.value !== q.answer.trim()) {
+                        // If the selected answer is wrong, highlight it in red
+                        label.classList.add('incorrect-answer');
+                    }
+                });
+
+                if (selectedOption && selectedOption.value === q.answer) {
+                    score++;
+                }
+            });
+
+            // Display results by changing the display property
+            scoreDisplay.textContent = `${score} / ${questions.length}`;
+            resultsArea.style.display = 'block';
+            
+            // Disable the form after submission
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+
+        // Initialize the quiz
+        renderQuestions();
+    </script>
+</body>
+</html>
